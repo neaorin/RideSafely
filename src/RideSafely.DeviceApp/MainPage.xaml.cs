@@ -1,4 +1,8 @@
-﻿using GHIElectronics.UWP.Shields;
+﻿//#define BUMPDETECTOR
+#define OTHERSTUFF
+
+using GHIElectronics.UWP.Shields;
+using RideSafely.GrovePi;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -18,6 +22,8 @@ using Windows.UI.Xaml.Navigation;
 
 // The Blank Page item template is documented at http://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
+
+
 namespace RideSafely.DeviceApp
 {
     /// <summary>
@@ -28,14 +34,19 @@ namespace RideSafely.DeviceApp
         public MainPage()
         {
             this.InitializeComponent();
-
-            this.SetupAsync();
+#if BUMPDETECTOR
+            this.SetupBumpDetectorAsync();
+#elif OTHERSTUFF
+            GroveManager.RunAsync();
+#endif
         }
+
+#if BUMPDETECTOR
         BumpDetector bumpDetector;
-        private async Task SetupAsync()
+        private async Task SetupBumpDetectorAsync()
         {
             bumpDetector = new BumpDetector();
-          
+
             await bumpDetector.StartAsync(Vector3.Zero);
             bumpDetector.BumpOccured += bumpDetector_BumpOccured;
         }
@@ -60,7 +71,7 @@ namespace RideSafely.DeviceApp
             this.bumpTimer.Tick += (sender2, obj) =>
             {
                 if (i % 2 == 0)
-                   bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.White;
+                    bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.White;
                 else
                     bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.Black;
                 if (i == 19)
@@ -71,5 +82,8 @@ namespace RideSafely.DeviceApp
                 i++;
             };
         }
+#endif
+
+
     }
 }
