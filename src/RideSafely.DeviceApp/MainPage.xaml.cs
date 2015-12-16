@@ -37,7 +37,7 @@ namespace RideSafely.DeviceApp
 #if BUMPDETECTOR
             this.SetupBumpDetectorAsync();
 #elif OTHERSTUFF
-            GroveManager.RunAsync();
+            (new GroveManager()).RunAsync();
 #endif
         }
 

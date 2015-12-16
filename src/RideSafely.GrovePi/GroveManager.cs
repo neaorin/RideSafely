@@ -13,13 +13,18 @@ namespace RideSafely.GrovePi
 {
     public class GroveManager
     {
-        public static string DeviceId = "dxberry1";
-        public static string DeviceConnectionString = "";
-            
-      
+        public string DeviceId = "dxberry1";
+        public string DeviceConnectionString = "";
 
 
-        public async static Task RunAsync()
+        private int distanceThreshold = 10000;
+        private TimeSpan timeThreshold = TimeSpan.FromMinutes(2);
+        private bool haveLostLeader = false;
+        private DateTime timeLostLeader;
+
+        public event EventHandler LostLeader;
+
+        public async Task RunAsync()
         {
             var thermostat = new Thermostat() { DeviceId = DeviceId };
             var random = new Random();
@@ -31,6 +36,7 @@ namespace RideSafely.GrovePi
 
             var deviceFactory = DeviceFactory.Build;
             var tempHumiditySensor = deviceFactory.TemperatureAndHumiditySensor(Pin.DigitalPin4, TemperatureAndHumiditySensorModel.DHT11);
+            var distanceSensor = deviceFactory.UltraSonicSensor(Pin.DigitalPin2);
             var lcdDisplay = deviceFactory.RgbLcdDisplay();
             lcdDisplay.SetBacklightRgb(0, 20, 0);
 
@@ -40,15 +46,13 @@ namespace RideSafely.GrovePi
                 {
 
                     // READ SENSOR DATA
-
-
                     var readValue = tempHumiditySensor.TemperatureAndHumidity();
                     thermostat.Temperature = readValue.Temperature;
                     thermostat.Humidity = readValue.Humidity;
                     lcdDisplay.SetText(String.Format("  {0}      {1}\n  `C       %",
                         thermostat.Temperature, thermostat.Humidity));
 
-
+                    CheckIfWehaveLostleader(distanceSensor);
 
                     // SEND DATA TO IOT HUB
 
@@ -60,7 +64,7 @@ namespace RideSafely.GrovePi
 
                     lcdDisplay.SetBacklightRgb(0, 20, 0);
 
-                    
+
 
                 }
                 catch (Exception ex)
@@ -74,6 +78,37 @@ namespace RideSafely.GrovePi
                 await Task.Delay(1000);
             }
 
+        }
+
+        private void CheckIfWehaveLostleader(IUltrasonicRangerSensor distanceSensor)
+        {
+            //read distance data
+            int currentDistance = distanceSensor.MeasureInCentimeters();
+
+            //if we haven't lost the leader
+            if (!haveLostLeader)
+            {
+                //check if we've lost him
+                if (currentDistance > distanceThreshold)
+                {
+                    haveLostLeader = true;
+                    timeLostLeader = DateTime.Now;
+                }
+                else //we've found him again
+                {
+                    haveLostLeader = false;
+                }
+            }
+            else //we've lost the leader
+            {
+                //if we have lost him for over two minutes
+                if (DateTime.Now - timeLostLeader > timeThreshold)
+                {
+                    //raise the lost event and begin the search again
+                    LostLeader?.Invoke(this, EventArgs.Empty);
+                    haveLostLeader = false;
+                }
+            }
         }
 
         static async Task ReceiveCommands(DeviceClient deviceClient)
