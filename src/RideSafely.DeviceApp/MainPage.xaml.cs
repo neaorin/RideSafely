@@ -1,8 +1,11 @@
-﻿using System;
+﻿using GHIElectronics.UWP.Shields;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Windows.UI.Xaml;
@@ -25,6 +28,48 @@ namespace RideSafely.DeviceApp
         public MainPage()
         {
             this.InitializeComponent();
+
+            this.SetupAsync();
+        }
+        BumpDetector bumpDetector;
+        private async Task SetupAsync()
+        {
+            bumpDetector = new BumpDetector();
+          
+            await bumpDetector.StartAsync(Vector3.Zero);
+            bumpDetector.BumpOccured += bumpDetector_BumpOccured;
+        }
+
+
+        DispatcherTimer bumpTimer = null;
+        private void bumpDetector_BumpOccured(object sender, DateTime e)
+        {
+            BumpTextBox.Text = $"Bump occured at {e}";
+
+            if (bumpTimer != null)
+            {
+                bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.Black;
+                bumpTimer.Stop();
+                bumpTimer = null;
+            }
+
+            bumpTimer = new DispatcherTimer();
+            this.bumpTimer.Interval = TimeSpan.FromMilliseconds(500);
+            bumpTimer.Start();
+            int i = 0;
+            this.bumpTimer.Tick += (sender2, obj) =>
+            {
+                if (i % 2 == 0)
+                   bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.White;
+                else
+                    bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.Black;
+                if (i == 19)
+                {
+                    bumpTimer.Stop();
+                    bumpTimer = null;
+                }
+                i++;
+            };
         }
     }
 }
