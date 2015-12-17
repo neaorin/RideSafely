@@ -1,6 +1,5 @@
-﻿//#define BUMPDETECTOR
-#define OTHERSTUFF
-
+﻿#define LEADER
+//#define FOLLOWER
 using GHIElectronics.UWP.Shields;
 using RideSafely.GrovePi;
 using System;
@@ -34,28 +33,40 @@ namespace RideSafely.DeviceApp
         public MainPage()
         {
             this.InitializeComponent();
-#if BUMPDETECTOR
+#if LEADER
             this.SetupBumpDetectorAsync();
-#elif OTHERSTUFF
-            (new GroveManager()).RunAsync();
+#elif FOLLOWER
+            var gm = new GroveManager();
+            var timer = new DispatcherTimer();
+            timer.Interval = TimeSpan.FromMilliseconds(100);
+            timer.Tick += (s, e) =>
+            BumpTextBox.Text = $"temp = {gm.Temperature} && hum = {gm.Humidity} && dist = {gm.DistanceFromLeader}";
+            timer.Start();
+            gm.RunAsync();
 #endif
         }
 
-#if BUMPDETECTOR
+#if LEADER
         BumpDetector bumpDetector;
         private async Task SetupBumpDetectorAsync()
         {
             bumpDetector = new BumpDetector();
 
+            AzureConnectManagerLeader.Setup();
+
             await bumpDetector.StartAsync(Vector3.Zero);
+          
             bumpDetector.BumpOccured += bumpDetector_BumpOccured;
         }
 
-
+         
+            
         DispatcherTimer bumpTimer = null;
-        private void bumpDetector_BumpOccured(object sender, DateTime e)
+        private async void bumpDetector_BumpOccured(object sender, DateTime e)
         {
             BumpTextBox.Text = $"Bump occured at {e}";
+
+            await AzureConnectManagerLeader.SendBumpMessageAsync();
 
             if (bumpTimer != null)
             {

@@ -2,6 +2,7 @@
 using GrovePi.Sensors;
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
+using RideSafely.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,32 +14,31 @@ namespace RideSafely.GrovePi
 {
     public class GroveManager
     {
-        public string DeviceId = "dxberry1";
-        public string DeviceConnectionString = "";
 
 
-        private int distanceThreshold = 10000;
-        private TimeSpan timeThreshold = TimeSpan.FromMinutes(2);
-        private bool haveLostLeader = false;
-        private DateTime timeLostLeader;
 
-        public event EventHandler LostLeader;
+
+
+
+        public int DistanceFromLeader { get; set; }
+        public double Temperature { get; set; }
+        public double Humidity { get; set; }
+
+        
+
 
         public async Task RunAsync()
         {
-            var thermostat = new Thermostat() { DeviceId = DeviceId };
-            var random = new Random();
+            AzureConnectManagerFollower.Setup();
 
-            DeviceClient deviceClient = DeviceClient.CreateFromConnectionString(DeviceConnectionString, TransportType.Http1);
+            var thermostat = new Thermostat() { DeviceId = Globals.LeaderDeviceId };
 
-            ReceiveCommands(deviceClient).Forget();
-
-
-            var deviceFactory = DeviceFactory.Build;
-            var tempHumiditySensor = deviceFactory.TemperatureAndHumiditySensor(Pin.DigitalPin4, TemperatureAndHumiditySensorModel.DHT11);
-            var distanceSensor = deviceFactory.UltraSonicSensor(Pin.DigitalPin2);
-            var lcdDisplay = deviceFactory.RgbLcdDisplay();
+            var tempHumiditySensor = DeviceFactory.Build.TemperatureAndHumiditySensor(Pin.DigitalPin3, TemperatureAndHumiditySensorModel.DHT11);
+            var lcdDisplay = DeviceFactory.Build.RgbLcdDisplay();
             lcdDisplay.SetBacklightRgb(0, 20, 0);
+
+            CheckTooCloseToLeaderManager tooCloseToLeaderManager = new CheckTooCloseToLeaderManager();
+            CheckFarAwayFromLeaderManager farAwayFromLeaderManager = new CheckFarAwayFromLeaderManager(this);
 
             while (true)
             {
@@ -52,15 +52,21 @@ namespace RideSafely.GrovePi
                     lcdDisplay.SetText(String.Format("  {0}      {1}\n  `C       %",
                         thermostat.Temperature, thermostat.Humidity));
 
-                    CheckIfWehaveLostleader(distanceSensor);
+                    Temperature = thermostat.Temperature;
+                    Humidity = thermostat.Humidity;
+
+                    DistanceFromLeader = await farAwayFromLeaderManager.CheckIfWehaveLostLeaderAsync();
+                    DistanceFromLeader = await tooCloseToLeaderManager.CheckIfWeAreTooCloseToLeaderAsync();
+
+                    thermostat.Distance = DistanceFromLeader;
 
                     // SEND DATA TO IOT HUB
 
                     var serializedMessage = JsonConvert.SerializeObject(thermostat);
                     //Debug.WriteLine("Sending message " + serializedMessage);
                     var message = new Message(Encoding.UTF8.GetBytes(serializedMessage));
-                    await deviceClient.SendEventAsync(message);
-                    //Debug.WriteLine("Message sent.");
+                    await AzureConnectManagerFollower.AzureClient.SendEventAsync(message);
+                    Debug.WriteLine("Message sent.");
 
                     lcdDisplay.SetBacklightRgb(0, 20, 0);
 
@@ -80,58 +86,11 @@ namespace RideSafely.GrovePi
 
         }
 
-        private void CheckIfWehaveLostleader(IUltrasonicRangerSensor distanceSensor)
-        {
-            //read distance data
-            int currentDistance = distanceSensor.MeasureInCentimeters();
 
-            //if we haven't lost the leader
-            if (!haveLostLeader)
-            {
-                //check if we've lost him
-                if (currentDistance > distanceThreshold)
-                {
-                    haveLostLeader = true;
-                    timeLostLeader = DateTime.Now;
-                }
-                else //we've found him again
-                {
-                    haveLostLeader = false;
-                }
-            }
-            else //we've lost the leader
-            {
-                //if we have lost him for over two minutes
-                if (DateTime.Now - timeLostLeader > timeThreshold)
-                {
-                    //raise the lost event and begin the search again
-                    LostLeader?.Invoke(this, EventArgs.Empty);
-                    haveLostLeader = false;
-                }
-            }
-        }
 
-        static async Task ReceiveCommands(DeviceClient deviceClient)
-        {
-            Debug.WriteLine("\nDevice waiting for commands from IoTHub...\n");
-            Message receivedMessage;
-            string messageData;
 
-            while (true)
-            {
-                receivedMessage = await deviceClient.ReceiveAsync();
 
-                if (receivedMessage != null)
-                {
-                    messageData = Encoding.ASCII.GetString(receivedMessage.GetBytes());
-                    Debug.WriteLine("\t{0}> Received message: {1}", DateTime.Now.ToLocalTime(), messageData);
 
-                    await deviceClient.CompleteAsync(receivedMessage);
-                }
-
-                await Task.Delay(500);
-            }
-        }
     }
 
 
@@ -141,6 +100,7 @@ namespace RideSafely.GrovePi
         public double Temperature { get; set; }
         public double Humidity { get; set; }
         public string DeviceId { get; set; }
+        public int Distance { get; set; }
     }
 
 

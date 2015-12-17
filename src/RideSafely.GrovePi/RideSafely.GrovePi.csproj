@@ -107,6 +107,9 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AzureConnectManagerFollower.cs" />
+    <Compile Include="CheckFarAwayFromLeaderManager.cs" />
+    <Compile Include="CheckTooCloseToLeaderManager.cs" />
     <Compile Include="GroveManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\RideSafely.GrovePi.rd.xml" />
@@ -120,6 +123,10 @@
     <ProjectReference Include="..\GrovePi\GrovePi.csproj">
       <Project>{a667742a-b887-4b46-8ec1-c671e8bec5e4}</Project>
       <Name>GrovePi</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\RideSafely.Common\RideSafely.Common.csproj">
+      <Project>{b3040cbf-c400-43ed-8d2d-b6078809bdd9}</Project>
+      <Name>RideSafely.Common</Name>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">

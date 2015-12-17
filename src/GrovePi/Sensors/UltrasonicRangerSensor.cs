@@ -1,8 +1,10 @@
-﻿namespace GrovePi.Sensors
+﻿using System.Threading.Tasks;
+
+namespace GrovePi.Sensors
 {
     public interface IUltrasonicRangerSensor
     {
-        int MeasureInCentimeters();
+        Task<int> MeasureInCentimetersAsync();
     }
 
     internal class UltrasonicRangerSensor : IUltrasonicRangerSensor
@@ -17,10 +19,11 @@
             _pin = pin;
         }
 
-        public int MeasureInCentimeters()
+        public async Task<int> MeasureInCentimetersAsync()
         {
             var buffer = new[] {CommandAddress, (byte) _pin, Constants.Unused, Constants.Unused};
             _device.DirectAccess.Write(buffer);
+            await Task.Delay(500);
             _device.DirectAccess.Read(buffer);
             return buffer[1]*256 + buffer[2];
         }
