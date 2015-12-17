@@ -15,11 +15,6 @@ namespace RideSafely.GrovePi
     public class GroveManager
     {
 
-
-
-
-
-
         public int DistanceFromLeader { get; set; }
         public double Temperature { get; set; }
         public double Humidity { get; set; }
@@ -55,18 +50,16 @@ namespace RideSafely.GrovePi
                     Temperature = thermostat.Temperature;
                     Humidity = thermostat.Humidity;
 
-                    DistanceFromLeader = await farAwayFromLeaderManager.CheckIfWehaveLostLeaderAsync();
-                    DistanceFromLeader = await tooCloseToLeaderManager.CheckIfWeAreTooCloseToLeaderAsync();
+                    //read distance data
+                    int currentDistance = await DeviceFactory.Build.
+                        UltraSonicSensor(Pin.DigitalPin4).MeasureInCentimetersAsync();
+
+                    DistanceFromLeader = await farAwayFromLeaderManager.CheckIfWehaveLostLeaderAsync(currentDistance);
+                    DistanceFromLeader = await tooCloseToLeaderManager.CheckIfWeAreTooCloseToLeaderAsync(currentDistance);
 
                     thermostat.Distance = DistanceFromLeader;
 
                     // SEND DATA TO IOT HUB
-
-                    var serializedMessage = JsonConvert.SerializeObject(thermostat);
-                    //Debug.WriteLine("Sending message " + serializedMessage);
-                    var message = new Message(Encoding.UTF8.GetBytes(serializedMessage));
-                    await AzureConnectManagerFollower.AzureClient.SendEventAsync(message);
-                    Debug.WriteLine("Message sent.");
 
                     lcdDisplay.SetBacklightRgb(0, 20, 0);
 

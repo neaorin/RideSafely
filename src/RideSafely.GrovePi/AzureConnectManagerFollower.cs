@@ -22,7 +22,8 @@ namespace RideSafely.GrovePi
             
             var random = new Random();
 
-            AzureClient = DeviceClient.CreateFromConnectionString(Globals.LeaderDeviceConnectionString, TransportType.Http1);
+            AzureClient = DeviceClient.CreateFromConnectionString(Globals.FollowerDeviceConnectionString, 
+                TransportType.Http1);
 
             ReceiveCommands(AzureClient).Forget();
         }

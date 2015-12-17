@@ -1,4 +1,5 @@
 ﻿using GrovePi;
+using GrovePi.Sensors;
 using Microsoft.Azure.Devices.Client;
 using Newtonsoft.Json;
 using RideSafely.Common;
@@ -13,7 +14,7 @@ namespace RideSafely.GrovePi
 {
     public class CheckFarAwayFromLeaderManager
     {
-        private int distanceThresholdForLosingLeader = 50;
+        private int distanceThresholdForLosingLeader = 10;
         private TimeSpan timeThresholdForLosingLeader = TimeSpan.FromSeconds(5);
         private bool haveLostLeader = false;
         private DateTime timeLostLeader;
@@ -25,11 +26,9 @@ namespace RideSafely.GrovePi
 
         private GroveManager groveManager { get; set; }
 
-        public async Task<int> CheckIfWehaveLostLeaderAsync()
+        public async Task<int> CheckIfWehaveLostLeaderAsync(int currentDistance)
         {
-            //read distance data
-            int currentDistance = await DeviceFactory.Build.
-                UltraSonicSensor(Pin.DigitalPin4).MeasureInCentimetersAsync();
+           
             
             Debug.WriteLine($"distance is {currentDistance}");
             //if we haven't lost the leader
@@ -44,6 +43,7 @@ namespace RideSafely.GrovePi
                 else //we've found him again
                 {
                     haveLostLeader = false;
+                    DeviceFactory.Build.Buzzer(Pin.DigitalPin7).ChangeState(SensorStatus.Off);
                 }
             }
             else //we've lost the leader
@@ -56,7 +56,7 @@ namespace RideSafely.GrovePi
 
                     DeviceMessage dm = new DeviceMessage()
                     {
-                        DeviceId = "Follower",
+                        DeviceId = Globals.FollowerDeviceId,
                         Message = Globals.LostLeaderMessage
                     };
 
@@ -65,6 +65,7 @@ namespace RideSafely.GrovePi
                     var message = new Message(Encoding.UTF8.GetBytes(serializedMessage));
                     await AzureConnectManagerFollower.AzureClient.SendEventAsync(message);
                     haveLostLeader = false;
+                    DeviceFactory.Build.Buzzer(Pin.DigitalPin7).ChangeState(SensorStatus.On);
                 }
             }
             return currentDistance;

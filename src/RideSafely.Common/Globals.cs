@@ -12,7 +12,7 @@ namespace RideSafely.Common
         public static string LeaderDeviceConnectionString = "";
             
 
-        public static string FollowerDeviceId = "ridesafely-follower";
+        public static string FollowerDeviceId = "ridesafely-follower1";
         public static string FollowerDeviceConnectionString = "";
             
 

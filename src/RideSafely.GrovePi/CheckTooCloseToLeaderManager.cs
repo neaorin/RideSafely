@@ -11,16 +11,14 @@ namespace RideSafely.GrovePi
 {
     public class CheckTooCloseToLeaderManager
     {
-        private int distanceThresholdForTooCloseToLeader = 50; //centimeters
+        private int distanceThresholdForTooCloseToLeader = 3; //centimeters
         private TimeSpan timeThresholdForTooCloseToLeader = TimeSpan.FromSeconds(5);
         private bool tooCloseToLeader = false;
         private DateTime timeTooCloseToLeader;
 
-        public async Task<int> CheckIfWeAreTooCloseToLeaderAsync()
+        public async Task<int> CheckIfWeAreTooCloseToLeaderAsync(int currentDistance)
         {
-            //read distance data
-            int currentDistance = await DeviceFactory.Build.
-                UltraSonicSensor(Pin.DigitalPin4).MeasureInCentimetersAsync();
+            
             
             Debug.WriteLine($"distance is {currentDistance}");
             //if we aren't too close to the leader

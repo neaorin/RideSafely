@@ -19,7 +19,7 @@ namespace RideSafely.DeviceApp
 
             var random = new Random();
 
-            AzureClient = DeviceClient.CreateFromConnectionString(Globals.FollowerDeviceConnectionString,
+            AzureClient = DeviceClient.CreateFromConnectionString(Globals.LeaderDeviceConnectionString,
                 TransportType.Http1);
 
             
@@ -29,7 +29,7 @@ namespace RideSafely.DeviceApp
         {
             DeviceMessage dm = new DeviceMessage()
             {
-                DeviceId = "Leader",
+                DeviceId = Globals.LeaderDeviceId,
                 Message = Globals.BumpOccuredMessage + " on " + DateTime.Now 
             };
             var serializedMessage = JsonConvert.SerializeObject(dm);

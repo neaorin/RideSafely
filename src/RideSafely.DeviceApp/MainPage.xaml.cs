@@ -1,5 +1,5 @@
-﻿#define LEADER
-//#define FOLLOWER
+﻿//#define LEADER
+#define FOLLOWER
 using GHIElectronics.UWP.Shields;
 using RideSafely.GrovePi;
 using System;
