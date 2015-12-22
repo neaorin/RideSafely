@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace RideSafely.Common
 {
-    interface IWeatherService
+    public class DeviceMessage
     {
-        // TODO
-        double GetChanceOfRainPercent(double latitude, double longitude);
+        public string DeviceId { get; set; }
+        public string Message { get; set; }
     }
 }

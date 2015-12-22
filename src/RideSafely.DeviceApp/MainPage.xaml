@@ -8,6 +8,6 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
+        <TextBox Name="BumpTextBox" Text="Placeholder"/>
     </Grid>
 </Page>
