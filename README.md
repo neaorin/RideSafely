@@ -11,7 +11,7 @@ This is a demo of device-to-cloud telemetry and cloud-to-device command & contro
 6. [Summary](#Summary)
 
 <a name="Task1"></a>
-## Scenario Description
+## 1. Scenario Description
 
 Motorcycle riders are a tight-knit group. They usually like to share the fun by going out in groups, sometimes very large ones.
 One aspect that's often overlooked in such outings - especially if some people in the group are relatively new to riding - is keeping the group together. We can't have people wander off and leave the group, and we also don't want newbies to lose contact with the rest of the group, as getting large groups back together is very time-consuming. 
@@ -27,7 +27,7 @@ For device messaging we use [Microsoft Azure IoT Hub](https://azure.microsoft.co
 Whenever a rider loses touch with the rest of the group, a message is sent from the device to the IoT Hub. Each message is then processed and sent to the group leader, and displayed on their dashboard.
 
 <a name="Task2"></a>
-## What you will need
+## 2. What you will need
 
 For this project you will need the following:
 
@@ -63,13 +63,41 @@ We've prepared a Powershell script to create all the above components for you au
 Open up the file in your editor of choice, and edit the first three lines (script parameters).
 Make sure you edit the name of the hub, and this needs to be unique (it's part of the DNS name of the hub).
 
-```ps
+```powershell
 # fill in Azure parameters 
 $subscriptionId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' # put in your subscription Id here; use the Get-AzureRmSubscription cmdlet if you need to find out the Id
 $resourceGroupName = 'RideSafely' # you must change this since the IoT Hub Hostname needs to be unique
 $location = 'North Europe'
 ```
 
-Then run the script. At the end, you should be able to see the Resource Group containing the above resources in the Azure Portal.
+Then run the script. At the end, you should be able to see the Resource Group containing the above resources in the [Azure Portal](http://portal.azure.com/).
+
+
+### Portal setup
+
+You can alternatively create each component from the [Azure Portal](http://portal.azure.com/).
+
+### Cloud Device management
+
+Once you've created the IoT Hub, you need to register your devices so they are recognized and allowed to communicate with the hub. 
+
+The IoT Hub allows this [through an open source SDK](https://github.com/Azure/azure-iot-sdks). The demo also uses this SDK to connect to the IoT Hub and send messages; it's referenced [as a NuGet package](https://www.nuget.org/packages/Microsoft.Azure.Devices.Client/).
+
+Fortunately, as part of the SDK the good folks at Microsoft have also included a GUI device management tool called [Device Explorer](https://github.com/Azure/azure-iot-sdks/blob/master/tools/DeviceExplorer/doc/how_to_use_device_explorer.md). Get this tool and run it.
+
+Use the instructions provided in the link above to connect to your IoT Hub. Then register two devices with the following Ids:
+
+1. **ridesafely-leader**
+2. **ridesafely-follower**
+
+These two devices will represent our leader and one of our followers.
+
+For each device, make a note of the *ConnectionString* and *PrimaryKey* values, as you will need these later to configure your solution.
+
+<a name="Task4"></a>
+## 4. Compiling and deploying the code
+
+Open up the RideSafely solution in Visual Studio.
+
 
 
