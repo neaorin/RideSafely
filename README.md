@@ -198,8 +198,22 @@ In the **x86** configuration, it simulates the ranger sensor, LCD and LED via th
 
 In this setup, you select the **x86** or **AnyCPU** platform architecture and **Local Machine** as the deployment target.
 
-### Build
+### Build and deploy
 
 Whether you selected ARM or x86, compile your solution in **Debug** mode. 
 
+Select the **RideSafely.DeviceApp** project, right click on it and select **Set as Start-up Project**.
+
 Then deploy it by clicking **Start** (or hitting F5) in Visual Studio.
+
+<a name="Task6"></a>
+## 6. Running the solution
+
+Once the device solution runs, you will be prompted to setup your device's connection to the IoT Hub.
+
+Configure the device as a follower first. Enter or copy/paste the following information in the **IoT Settings** window:
+
+1. Hub name - get it from the Azure portal
+2. Device name and Device Key - get them from the Device Explorer app you used to register the devices with the hub.
+
+Once you have the correct values, hit **OK**. The app should run and display the measured distance. The little led witness should light up anytime the distance stays above the threshold (10 centimeters) for more than 5 seconds. 
