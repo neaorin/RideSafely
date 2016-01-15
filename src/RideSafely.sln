@@ -11,6 +11,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RideSafely.ProcessNotificat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RideSafely.Common", "RideSafely.Common\RideSafely.Common.csproj", "{B3040CBF-C400-43ED-8D2D-B6078809BDD9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "files", "files", "{1B393475-1792-494F-B764-04498F5BF468}"
+	ProjectSection(SolutionItems) = preProject
+		Azure\scripts\CreateAzureObjects.ps1 = Azure\scripts\CreateAzureObjects.ps1
+		..\README.md = ..\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
