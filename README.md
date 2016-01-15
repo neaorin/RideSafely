@@ -9,7 +9,6 @@ This is a demo of device-to-cloud telemetry and cloud-to-device command & contro
 4. [Device Setup](#Task4) (Optional)
 5. [Compiling and deploying the code](#Task5)
 6. [Running the solution](#Task6)
-7. [Summary](#Summary)
 
 <a name="Task1"></a>
 ## 1. Scenario Description
