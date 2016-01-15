@@ -1,5 +1,4 @@
-﻿using GrovePi;
-using GrovePi.Sensors;
+﻿using RideSafely.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,19 +6,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RideSafely.GrovePi
+namespace RideSafely.DeviceApp.Managers
 {
     public class CheckTooCloseToLeaderManager
     {
+
         private int distanceThresholdForTooCloseToLeader = 3; //centimeters
         private TimeSpan timeThresholdForTooCloseToLeader = TimeSpan.FromSeconds(5);
         private bool tooCloseToLeader = false;
         private DateTime timeTooCloseToLeader;
 
-        public async Task<int> CheckIfWeAreTooCloseToLeaderAsync(int currentDistance)
+        public CheckTooCloseToLeaderManager()
         {
-            
-            
+        }
+
+        public TooCloseToLeaderStatus CheckIfWeAreTooCloseToLeader(int currentDistance)
+        {
+            var status = new TooCloseToLeaderStatus() { NewAlarmState = null };
             Debug.WriteLine($"distance is {currentDistance}");
             //if we aren't too close to the leader
             if (!tooCloseToLeader)
@@ -33,7 +36,7 @@ namespace RideSafely.GrovePi
                 else //we are not too close to him
                 {
                     tooCloseToLeader = false;
-                    DeviceFactory.Build.Buzzer(Pin.DigitalPin7).ChangeState(SensorStatus.Off);
+                    status.NewAlarmState = false;
                 }
             }
             else //we are too close to leader
@@ -41,13 +44,17 @@ namespace RideSafely.GrovePi
                 //if we are too close to him for over two minutes
                 if (DateTime.Now - timeTooCloseToLeader > timeThresholdForTooCloseToLeader)
                 {
-                    //play sound
-                    DeviceFactory.Build.Buzzer(Pin.DigitalPin7).ChangeState(SensorStatus.On);
+                    status.NewAlarmState = true;
                     tooCloseToLeader = false;
                 }
             }
 
-            return currentDistance;
+            return status;
         }
+    }
+
+    public class TooCloseToLeaderStatus
+    {
+        public bool? NewAlarmState { get; set; }
     }
 }

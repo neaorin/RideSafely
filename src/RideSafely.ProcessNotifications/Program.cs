@@ -5,58 +5,59 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.ServiceBus.Messaging;
+using System.Configuration;
 
 namespace RideSafely.ProcessNotifications
 {
-    // To learn more about Microsoft Azure WebJobs SDK, please see http://go.microsoft.com/fwlink/?LinkID=320976
+
     class Program
     {
-        // Please set the following connection strings in app.config for this WebJob to run:
-        // AzureWebJobsDashboard and AzureWebJobsStorage
         static void Main()
         {
             //var host = new JobHost();
-            //// The following code ensures that the WebJob will be running continuously
+
             //host.RunAndBlock();
-
-            var queueProc = new QueueProcessing();
-
-            while (true)
-            {
-
-            }
+            Setup();
         }
-    }
 
-    class QueueProcessing
-    {
-        string _serviceBusConnectionString = "Endpoint=sb://ridesafely.servicebus.windows.net/;SharedAccessKeyName=Owner;SharedAccessKey=a5W7GFhUOoDxCbmEu7y3iB5ds8gBNtspqtRWM4vEiZs=";
-        string _queueName = "ridesafelyqueue";
-         
-        public QueueProcessing()
+        static void Setup()
         {
-            QueueClient Client =
-              QueueClient.CreateFromConnectionString(_serviceBusConnectionString, _queueName);
+            string iotHubConnectionString = ConfigurationManager.ConnectionStrings["AzureIoTHub"].ConnectionString;
+            string hubName = iotHubConnectionString.Substring(iotHubConnectionString.IndexOf('=') + 1, 
+                iotHubConnectionString.IndexOf('.') - iotHubConnectionString.IndexOf('=') - 1).ToLower();
+            string storageConnectionString = ConfigurationManager.ConnectionStrings["AzureWebJobsStorage"].ConnectionString;
 
-            // Configure the callback options.
-            OnMessageOptions options = new OnMessageOptions();
-            options.AutoComplete = false;
-            options.AutoRenewTimeout = TimeSpan.FromMinutes(1);
+            var eventHubClient = EventHubClient.CreateFromConnectionString(iotHubConnectionString, hubName);
+            var eventProcessorHostName = Guid.NewGuid().ToString();
+            var eventProcessorHost = new EventProcessorHost(
+              eventProcessorHostName,
+              hubName,
+              EventHubConsumerGroup.DefaultGroupName,
+              iotHubConnectionString,
+              storageConnectionString);
 
-            // Callback to handle received messages.
-            Client.OnMessage((message) =>
+            var epo = new EventProcessorOptions
             {
-                try
-                {
-                    Functions.ProcessQueueMessage(message.GetBody<string>(), Console.Out);
-                    message.Complete();
-                }
-                catch (Exception)
-                {
-                    // Indicates a problem, unlock message in queue.
-                    message.Abandon();
-                }
-            }, options);
+                MaxBatchSize = 100,
+                PrefetchCount = 10,
+                ReceiveTimeOut = TimeSpan.FromSeconds(20),
+                InitialOffsetProvider = (name) => DateTime.Now.AddDays(-7),
+            };
+
+            epo.ExceptionReceived += OnExceptionReceived;
+
+            eventProcessorHost.RegisterEventProcessorAsync<RideSafelyEventProcessor>(epo).Wait();
+
+            Console.WriteLine("Receiving.  Please enter to stop worker.");
+            Console.ReadLine();
+            eventProcessorHost.UnregisterEventProcessorAsync().Wait();
         }
+
+
+        public static void OnExceptionReceived(object sender, ExceptionReceivedEventArgs args)
+        {
+            Console.WriteLine("Event Hub exception received: {0}", args.Exception.Message);
+        }
+
     }
 }

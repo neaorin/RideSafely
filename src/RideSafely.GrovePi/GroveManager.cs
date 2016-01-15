@@ -1,74 +1,41 @@
 ﻿using GrovePi;
+using GrovePi.I2CDevices;
 using GrovePi.Sensors;
-using Microsoft.Azure.Devices.Client;
-using Newtonsoft.Json;
 using RideSafely.Common;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RideSafely.GrovePi
 {
-    public class GroveManager
+    public class GroveManager : IDeviceManager
     {
+        // GrovePi Pin Configuration - configure these to match the sensors you plugged into GrovePi+
+        // you can connect the LCD display to any I2C port.
+        private static Pin LedPin = Pin.DigitalPin8;
+        private static Pin UltraSonicSensorPin = Pin.DigitalPin4;
 
-        public int DistanceFromLeader { get; set; }
-        public double Temperature { get; set; }
-        public double Humidity { get; set; }
+        private IRgbLcdDisplay LCD { get; set; }
+        private IUltrasonicRangerSensor UltrasonicRangerSensor { get; set; }
+        private ILed Led { get; set; }
 
-        
-
-
-        public async Task RunAsync()
+        public GroveManager()
         {
-            AzureConnectManagerFollower.Setup();
-
-            var lcdDisplay = DeviceFactory.Build.RgbLcdDisplay();
-            lcdDisplay.SetBacklightRgb(0, 20, 0);
-
-            CheckTooCloseToLeaderManager tooCloseToLeaderManager = new CheckTooCloseToLeaderManager();
-            CheckFarAwayFromLeaderManager farAwayFromLeaderManager = new CheckFarAwayFromLeaderManager(this);
-
-            while (true)
-            {
-                try
-                {
-
-                    //read distance data
-                    int currentDistance = DeviceFactory.Build.
-                        UltraSonicSensor(Pin.DigitalPin4).MeasureInCentimeters();
-
-                    DistanceFromLeader = await farAwayFromLeaderManager.CheckIfWehaveLostLeaderAsync(currentDistance);
-                    DistanceFromLeader = await tooCloseToLeaderManager.CheckIfWeAreTooCloseToLeaderAsync(currentDistance);
-
-                    lcdDisplay.SetBacklightRgb(0, 20, 0);
-
-
-
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(ex.Message);
-
-                    lcdDisplay.SetBacklightRgb(20, 0, 0);
-
-                }
-
-                await Task.Delay(1000);
-            }
-
+            this.LCD = DeviceFactory.Build.RgbLcdDisplay();
+            this.Led = DeviceFactory.Build.Led(LedPin);
+            this.UltrasonicRangerSensor = DeviceFactory.Build.UltraSonicSensor(UltraSonicSensorPin);
         }
 
-    }
-
-
-    static class TaskExtensions
-    {
-        public static void Forget(this Task task)
+        public void ChangeAlarmState(bool alarmOn)
         {
+            this.Led.ChangeState(alarmOn ? SensorStatus.On : SensorStatus.Off);
+        }
+
+        public void DisplayMessage(string message)
+        {
+            this.LCD.SetText(message);
+        }
+
+        public int GetDistanceFromLeader()
+        {
+            return UltrasonicRangerSensor.MeasureInCentimeters();
         }
     }
 

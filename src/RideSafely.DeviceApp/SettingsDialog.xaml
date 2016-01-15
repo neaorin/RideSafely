@@ -1,0 +1,28 @@
+﻿<ContentDialog
+    x:Class="RideSafely.DeviceApp.SettingsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:RideSafely.DeviceApp"
+    xmlns:vm="using:RideSafely.DeviceApp.ViewModels"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="IoT Settings"
+    PrimaryButtonText="OK"
+    SecondaryButtonText="Exit"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick"
+    SecondaryButtonClick="ContentDialog_SecondaryButtonClick"
+    Name="AppSettingsDialog">
+
+
+<StackPanel Orientation="Vertical">
+        <TextBox x:Name="iotHubName" PlaceholderText="IoT Hub Name" Text="{x:Bind MyAppSettings.IotHubName, Mode=TwoWay}"/>
+        <TextBox x:Name="deviceId" PlaceholderText="DeviceId" Text="{x:Bind MyAppSettings.DeviceId, Mode=TwoWay}"/>
+        <TextBox x:Name="deviceKey" PlaceholderText="DeviceKey" Text="{x:Bind MyAppSettings.DeviceKey, Mode=TwoWay}"/>
+        <StackPanel Orientation="Horizontal">
+            <CheckBox x:Name="isLeader" IsChecked="{x:Bind MyAppSettings.IsLeader, Mode=OneWay}" IsEnabled="False"/>
+            <TextBlock Text="Group Leader"/>
+        </StackPanel>
+        
+    </StackPanel>
+</ContentDialog>

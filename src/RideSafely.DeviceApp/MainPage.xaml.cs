@@ -1,7 +1,7 @@
-﻿//#define LEADER
-#define FOLLOWER
-using GHIElectronics.UWP.Shields;
-using RideSafely.GrovePi;
+﻿
+using RideSafely.Common;
+using RideSafely.DeviceApp.Managers;
+using RideSafely.DeviceApp.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,71 +30,53 @@ namespace RideSafely.DeviceApp
     /// </summary>
     public sealed partial class MainPage : Page
     {
+        private ProgramManager ProgramManager { get; set; }
+        private MainViewModel ViewModel { get; set; }
         public MainPage()
         {
+
             this.InitializeComponent();
-#if LEADER
-            this.SetupBumpDetectorAsync();
-#elif FOLLOWER
-            var gm = new GroveManager();
-            var timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromMilliseconds(100);
-            timer.Tick += (s, e) =>
-            BumpTextBox.Text = $"temp = {gm.Temperature} && hum = {gm.Humidity} && dist = {gm.DistanceFromLeader}";
-            timer.Start();
-            gm.RunAsync();
-#endif
+
+            this.ViewModel = new MainViewModel();
+
+            // test data
+            //var appSettings = new AppSettingsViewModel();
+            //appSettings.IotHubName = "<enter hub name>";
+            //appSettings.DeviceId = "<enter device id>";
+            //appSettings.DeviceKey = "<enter key>";
+            //appSettings.IsLeader = false;
+            //appSettings.SaveToSettings(Windows.Storage.ApplicationData.Current.LocalSettings.Values);
         }
 
-#if LEADER
-        BumpDetector bumpDetector;
-        private async Task SetupBumpDetectorAsync()
+        private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            bumpDetector = new BumpDetector();
+            var settingsDialog = new SettingsDialog();
+            var result = await settingsDialog.ShowAsync();
 
-            AzureConnectManagerLeader.Setup();
+            if (result != ContentDialogResult.Primary)
+                Application.Current.Exit();
 
-            await bumpDetector.StartAsync(Vector3.Zero);
-          
-            bumpDetector.BumpOccured += bumpDetector_BumpOccured;
-        }
+            ViewModel.AppSettings = new AppSettingsViewModel();
+            ViewModel.AppSettings.LoadFromSettings(Windows.Storage.ApplicationData.Current.LocalSettings.Values);
 
-         
-            
-        DispatcherTimer bumpTimer = null;
-        private async void bumpDetector_BumpOccured(object sender, DateTime e)
-        {
-            BumpTextBox.Text = $"Bump occured at {e}";
 
-            await AzureConnectManagerLeader.SendBumpMessageAsync();
-
-            if (bumpTimer != null)
-            {
-                bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.Black;
-                bumpTimer.Stop();
-                bumpTimer = null;
-            }
-
-            bumpTimer = new DispatcherTimer();
-            this.bumpTimer.Interval = TimeSpan.FromMilliseconds(500);
-            bumpTimer.Start();
-            int i = 0;
-            this.bumpTimer.Tick += (sender2, obj) =>
-            {
-                if (i % 2 == 0)
-                    bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.White;
-                else
-                    bumpDetector.Hat.D2.Color = bumpDetector.Hat.D3.Color = FEZHAT.Color.Black;
-                if (i == 19)
-                {
-                    bumpTimer.Stop();
-                    bumpTimer = null;
-                }
-                i++;
-            };
-        }
+            // device manager
+            IDeviceManager deviceManager = null;
+            // if ARM, we deploy this on Raspberry PI with GrovePi+
+            // if not, we run on a simulated device
+#if ARM
+            deviceManager = new GrovePi.GroveManager();
+#else
+            deviceManager = new SimulatedDeviceManager();
 #endif
+            // Program
+            this.ProgramManager = new ProgramManager(
+                ViewModel,
+                new AzureConnectManager(ViewModel.AppSettings.ConnectionString),
+                deviceManager
+                );           
 
-
+            this.ProgramManager.Run();
+        }
     }
 }

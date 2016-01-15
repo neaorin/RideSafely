@@ -108,7 +108,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DeviceMessage.cs" />
-    <Compile Include="Globals.cs" />
+    <Compile Include="IDeviceManager.cs" />
+    <Compile Include="IHubConnectManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="Properties\RideSafely.Common.rd.xml" />
   </ItemGroup>

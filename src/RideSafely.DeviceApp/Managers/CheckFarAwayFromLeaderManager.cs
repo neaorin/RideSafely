@@ -1,8 +1,4 @@
-﻿using GrovePi;
-using GrovePi.Sensors;
-using Microsoft.Azure.Devices.Client;
-using Newtonsoft.Json;
-using RideSafely.Common;
+﻿using RideSafely.Common;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RideSafely.GrovePi
+namespace RideSafely.DeviceApp.Managers
 {
     public class CheckFarAwayFromLeaderManager
     {
@@ -19,16 +15,13 @@ namespace RideSafely.GrovePi
         private bool haveLostLeader = false;
         private DateTime timeLostLeader;
 
-        public CheckFarAwayFromLeaderManager(GroveManager gm)
+        public CheckFarAwayFromLeaderManager()
         {
-            groveManager = gm;
         }
 
-        private GroveManager groveManager { get; set; }
-
-        public async Task<int> CheckIfWehaveLostLeaderAsync(int currentDistance)
+        public FarAwayFromLeaderStatus CheckIfWeHaveLostLeader(int currentDistance)
         {
-           
+            var status = new FarAwayFromLeaderStatus() { NewAlarmState = null, SendMessage = false };
             
             Debug.WriteLine($"distance is {currentDistance}");
             //if we haven't lost the leader
@@ -43,7 +36,7 @@ namespace RideSafely.GrovePi
                 else //we've found him again
                 {
                     haveLostLeader = false;
-                    DeviceFactory.Build.Buzzer(Pin.DigitalPin7).ChangeState(SensorStatus.Off);
+                    status.NewAlarmState = false;
                 }
             }
             else //we've lost the leader
@@ -53,22 +46,19 @@ namespace RideSafely.GrovePi
                 {
                     //raise the lost event and begin the search again
                     Debug.WriteLine("Lost leader");
-
-                    DeviceMessage dm = new DeviceMessage()
-                    {
-                        DeviceId = Globals.FollowerDeviceId,
-                        Message = Globals.LostLeaderMessage
-                    };
-
-                    var serializedMessage = JsonConvert.SerializeObject(dm);
-                    //Debug.WriteLine("Sending message " + serializedMessage);
-                    var message = new Message(Encoding.UTF8.GetBytes(serializedMessage));
-                    await AzureConnectManagerFollower.AzureClient.SendEventAsync(message);
+                    status.SendMessage = true;
+                    status.NewAlarmState = true;
                     haveLostLeader = false;
-                    DeviceFactory.Build.Buzzer(Pin.DigitalPin7).ChangeState(SensorStatus.On);
+
                 }
             }
-            return currentDistance;
+            return status;
         }
+    }
+
+    public class FarAwayFromLeaderStatus
+    {
+        public bool? NewAlarmState { get; set; }
+        public bool SendMessage { get; set; }
     }
 }
